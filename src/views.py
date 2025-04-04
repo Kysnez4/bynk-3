@@ -17,6 +17,7 @@ file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s: %(me
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
+
 def main_sheet(date: str):
     """Формирует сводный отчет по финансам пользователя.
 
@@ -31,15 +32,11 @@ def main_sheet(date: str):
         - Курсы валют
         - Цены акций
     """
-    logger.info('Открываем и читаем файл')
-    with open("..\\user_settings.json") as f:
+    logger.info("Открываем и читаем файл")
+    with open("user_settings.json") as f:
         data = json.load(f)
     file = XLSX_file_read()
-    answer = {"greeting": "",
-              "cards": [],
-              "top_transactions": [],
-              "currency_rates": [],
-              "stock_prices": []}
+    answer = {"greeting": "", "cards": [], "top_transactions": [], "currency_rates": [], "stock_prices": []}
 
     logger.info("Переводим строку с датой в формат datetime и по времени выводим сообщение с приветствием")
     date = datetime.datetime.strptime(date, "%Y-%m-%d %H:%M:%S")
@@ -56,7 +53,7 @@ def main_sheet(date: str):
     logger.info("Сортируем список по дате")
     a = []
     for i in file:
-        if 1 <= datetime.datetime.strptime(i['Дата платежа'], "%d.%m.%Y").day <= date.day:
+        if 1 <= datetime.datetime.strptime(i["Дата платежа"], "%d.%m.%Y").day <= date.day:
             a.append(i)
 
     file = a
@@ -67,13 +64,13 @@ def main_sheet(date: str):
     logger.info("Сортируем список по сумме операций и получаем самые большие транзакции")
     top_transactions = get_top_transactions(file)
 
-    logger.info('Получаем курс валют пользователя с помощью API')
+    logger.info("Получаем курс валют пользователя с помощью API")
     currency_rates = get_currency(data)
 
-    logger.info('Получаем стоимость акций пользователя с помощью API')
+    logger.info("Получаем стоимость акций пользователя с помощью API")
     stock_prices = get_stocks(data)
 
-    logger.info('Записываем ответы в вывод')
+    logger.info("Записываем ответы в вывод")
     answer["greeting"] = message
     answer["cards"] = cards
     answer["top_transactions"] = top_transactions
@@ -81,6 +78,7 @@ def main_sheet(date: str):
     answer["stock_prices"] = stock_prices
 
     return json.dumps(answer, ensure_ascii=False, indent=4)
+
 
 def get_top_transactions(data):
     """Возвращает 5 самых крупных транзакций.
@@ -104,17 +102,18 @@ def get_top_transactions(data):
         )
     return top_transactions
 
+
 def get_cards(file):
     """Агрегирует данные по банковским картам.
 
-        Args:
-            file: Список транзакций.
+    Args:
+        file: Список транзакций.
 
-        Returns:
-            Список словарей с информацией по каждой карте:
-            - Последние цифры
-            - Общая сумма расходов
-            - Сумма кешбэка
+    Returns:
+        Список словарей с информацией по каждой карте:
+        - Последние цифры
+        - Общая сумма расходов
+        - Сумма кешбэка
     """
     numbers = []
     cards = []
@@ -137,4 +136,3 @@ def get_cards(file):
         i["cashback"] = round(i["cashback"], 2)
 
     return cards
-

@@ -1,4 +1,3 @@
-#чисто ради прикола
 import json
 from datetime import datetime
 
@@ -11,10 +10,10 @@ from rich.progress import Progress
 from rich.text import Text
 from rich.style import Style
 
-from src.reports import spending_by_category, file_df
+from src.reports import spending_by_category
 from src.services import investment_bank, description_filter
 from src.views import main_sheet
-from src.utils import XLSX_file_read
+from src.utils import XLSX_file_read, file_df
 
 # Инициализация rich console
 console = Console()
@@ -34,8 +33,7 @@ def print_header():
     ██████╔╝███████║██╔██╗ ██║█████╔╝ ██║   ██║██║   ██║██║██╔██╗ ██║██║  ███╗
     ██╔══██╗██╔══██║██║╚██╗██║██╔═██╗ ██║   ██║╚██╗ ██╔╝██║██║╚██╗██║██║   ██║
     ██████╔╝██║  ██║██║ ╚████║██║  ██╗╚██████╔╝ ╚████╔╝ ██║██║ ╚████║╚██████╔╝
-    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ 
-    """)
+    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝  ╚═╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝ """)
 
     subtitle = Text("Аналитический сервис для управления финансами", style="italic dim")
 
@@ -46,11 +44,7 @@ def print_header():
 
 def show_main_menu():
     """Отображает главное меню"""
-    console.print(Panel.fit(
-        "Выберите действие:",
-        title="Главное меню",
-        border_style="blue"
-    ))
+    console.print(Panel.fit("Выберите действие:", title="Главное меню", border_style="blue"))
 
     console.print("1. [cyan]Главная страница[/cyan]")
     console.print("2. [green]Инвесткопилка[/green]")
@@ -62,16 +56,9 @@ def show_main_menu():
 
 def get_main_page():
     """Запрашивает данные для главной страницы"""
-    console.print(Panel.fit(
-        "Введите дату и время для анализа",
-        title="Главная страница",
-        border_style="cyan"
-    ))
+    console.print(Panel.fit("Введите дату и время для анализа", title="Главная страница", border_style="cyan"))
 
-    date_input = Prompt.ask(
-        "Дата и время (YYYY-MM-DD HH:MM:SS)",
-        default=datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    )
+    date_input = Prompt.ask("Дата и время (YYYY-MM-DD HH:MM:SS)", default=datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
     with Progress(transient=True) as progress:
         task = progress.add_task("Формирование отчета...", total=1)
@@ -83,21 +70,11 @@ def get_main_page():
 
 def get_invest_page():
     """Запрашивает данные для инвесткопилки"""
-    console.print(Panel.fit(
-        "Введите параметры для расчета",
-        title="Инвесткопилка",
-        border_style="green"
-    ))
+    console.print(Panel.fit("Введите параметры для расчета", title="Инвесткопилка", border_style="green"))
 
-    month_input = Prompt.ask(
-        "Месяц (YYYY-MM)",
-        default=datetime.now().strftime("%Y-%m")
-    )
+    month_input = Prompt.ask("Месяц (YYYY-MM)", default=datetime.now().strftime("%Y-%m"))
 
-    limit_input = IntPrompt.ask(
-        "Лимит округления",
-        default=50
-    )
+    limit_input = IntPrompt.ask("Лимит округления", default=50)
 
     with Progress(transient=True) as progress:
         task = progress.add_task("Чтение данных...", total=1)
@@ -115,11 +92,7 @@ def get_invest_page():
 
 def get_search_page():
     """Запрашивает данные для поиска"""
-    console.print(Panel.fit(
-        "Введите параметры поиска",
-        title="Поиск транзакций",
-        border_style="yellow"
-    ))
+    console.print(Panel.fit("Введите параметры поиска", title="Поиск транзакций", border_style="yellow"))
 
     keyword = Prompt.ask("Ключевое слово для поиска")
 
@@ -138,17 +111,10 @@ def get_search_page():
 
 def get_report_page():
     """Запрашивает данные для отчета"""
-    console.print(Panel.fit(
-        "Введите параметры отчета",
-        title="Отчет по категориям",
-        border_style="magenta"
-    ))
+    console.print(Panel.fit("Введите параметры отчета", title="Отчет по категориям", border_style="magenta"))
 
     category = Prompt.ask("Категория для анализа")
-    date_input = Prompt.ask(
-        "Дата отсчета (YYYY-MM-DD)",
-        default=datetime.now().strftime("%Y-%m-%d")
-    )
+    date_input = Prompt.ask("Дата отсчета (YYYY-MM-DD)", default=datetime.now().strftime("%Y-%m-%d"))
 
     with Progress(transient=True) as progress:
         task = progress.add_task("Формирование отчета...", total=1)
@@ -168,11 +134,7 @@ def display_main_page(result):
     data = json.loads(result)
 
     # Приветствие
-    console.print(Panel.fit(
-        data["greeting"],
-        title="Приветствие",
-        style=STYLE_HEADER
-    ))
+    console.print(Panel.fit(data["greeting"], title="Приветствие", style=STYLE_HEADER))
 
     # Карты
     cards_table = Table(title="Ваши карты", show_header=True, header_style="bold magenta")
@@ -227,12 +189,14 @@ def display_main_page(result):
 
 def display_invest_result(result):
     """Отображает результат инвесткопилки"""
-    console.print(Panel.fit(
-        f"Вы могли накопить: [bold green]{result:,.2f} ₽[/]",
-        title="Результат Инвесткопилки",
-        border_style="green",
-        padding=(1, 4)
-    ))
+    console.print(
+        Panel.fit(
+            f"Вы могли накопить: [bold green]{result:,.2f} ₽[/]",
+            title="Результат Инвесткопилки",
+            border_style="green",
+            padding=(1, 4),
+        )
+    )
 
 
 def display_search_results(result):
@@ -250,11 +214,14 @@ def display_search_results(result):
     table.add_column("Описание")
 
     for item in data[:10]:  # Показываем первые 10 результатов
-        amount = f"{item['Сумма операции']:,.2f} ₽" if 'Сумма операции' in item else "N/A"
-        date = item.get('Дата операции', 'N/A')
-        category = item.get('Категория', 'N/A')
-        description = item.get('Описание', 'N/A')[:50] + "..." if isinstance(item.get('Описание'), str) and len(
-            item.get('Описание')) > 50 else item.get('Описание', 'N/A')
+        amount = f"{item['Сумма операции']:,.2f} ₽" if "Сумма операции" in item else "N/A"
+        date = item.get("Дата операции", "N/A")
+        category = item.get("Категория", "N/A")
+        description = (
+            item.get("Описание", "N/A")[:50] + "..."
+            if isinstance(item.get("Описание"), str) and len(item.get("Описание")) > 50
+            else item.get("Описание", "N/A")
+        )
 
         table.add_row(date, amount, category, description)
 
@@ -266,12 +233,9 @@ def display_search_results(result):
 
 def display_report(result):
     """Отображает отчет"""
-    console.print(Panel.fit(
-        result.to_string(index=False),
-        title="Отчет по категории",
-        border_style="blue",
-        padding=(1, 2)
-    ))
+    console.print(
+        Panel.fit(result.to_string(index=False), title="Отчет по категории", border_style="blue", padding=(1, 2))
+    )
 
 
 def main():

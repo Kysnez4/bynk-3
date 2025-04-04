@@ -5,8 +5,6 @@ import os
 import re
 from typing import Any, Hashable
 
-from src.utils import XLSX_file_read
-
 logger = logging.getLogger("services")
 logger.setLevel(logging.INFO)
 base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -16,6 +14,7 @@ file_handler = logging.FileHandler(log_file_path, mode="w", encoding="utf-8")
 file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s: %(message)s")
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
+
 
 def investment_bank(month: str, transactions: list[dict[Hashable, Any]], limit: int) -> float:
     """Вычисляет потенциальный доход от округления транзакций до заданного лимита.
@@ -63,4 +62,3 @@ def description_filter(transactions: list[dict[Hashable, Any]], word: str) -> st
     ]
 
     return json.dumps(my_list, ensure_ascii=False)
-

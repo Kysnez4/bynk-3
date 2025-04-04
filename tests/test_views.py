@@ -1,15 +1,8 @@
 import pytest
-from unittest.mock import patch, mock_open
 import json
-import datetime
 from src.views import main_sheet, get_top_transactions, get_cards
 
 # Тестовые данные
-TEST_USER_SETTINGS = {
-    "currencies": ["USD", "EUR"],
-    "stocks": ["AAPL", "GOOGL"]
-}
-
 TEST_XLSX_DATA = [
     {
         "Дата платежа": "01.01.2023",
@@ -18,7 +11,7 @@ TEST_XLSX_DATA = [
         "Сумма операции с округлением": 1000.0,
         "Категория": "Еда",
         "Описание": "Ресторан",
-        "Кэшбэк": 50.0
+        "Кэшбэк": 50.0,
     },
     {
         "Дата платежа": "02.01.2023",
@@ -27,7 +20,7 @@ TEST_XLSX_DATA = [
         "Сумма операции с округлением": 500.0,
         "Категория": "Транспорт",
         "Описание": "Такси",
-        "Кэшбэк": 10.0
+        "Кэшбэк": 10.0,
     },
     {
         "Дата платежа": "03.01.2023",
@@ -36,7 +29,7 @@ TEST_XLSX_DATA = [
         "Сумма операции с округлением": 2000.0,
         "Категория": "Одежда",
         "Описание": "Магазин",
-        "Кэшбэк": 100.0
+        "Кэшбэк": 100.0,
     },
     {
         "Дата платежа": "04.01.2023",
@@ -45,7 +38,7 @@ TEST_XLSX_DATA = [
         "Сумма операции с округлением": 300.0,
         "Категория": "Развлечения",
         "Описание": "Кино",
-        "Кэшбэк": 15.0
+        "Кэшбэк": 15.0,
     },
     {
         "Дата платежа": "05.01.2023",
@@ -54,7 +47,7 @@ TEST_XLSX_DATA = [
         "Сумма операции с округлением": 1500.0,
         "Категория": "Путешествия",
         "Описание": "Отель",
-        "Кэшбэк": 75.0
+        "Кэшбэк": 75.0,
     },
     {
         "Дата платежа": "06.01.2023",
@@ -63,18 +56,8 @@ TEST_XLSX_DATA = [
         "Сумма операции с округлением": 2500.0,
         "Категория": "Техника",
         "Описание": "Ноутбук",
-        "Кэшбэк": 125.0
-    }
-]
-
-TEST_CURRENCY_RATES = [
-    {"currency": "USD", "rate": 75.0},
-    {"currency": "EUR", "rate": 85.0}
-]
-
-TEST_STOCK_PRICES = [
-    {"stock": "AAPL", "price": 150.0},
-    {"stock": "GOOGL", "price": 2500.0}
+        "Кэшбэк": 125.0,
+    },
 ]
 
 
@@ -84,28 +67,6 @@ def mock_xlsx_file_read(monkeypatch):
         return TEST_XLSX_DATA
 
     monkeypatch.setattr("src.views.XLSX_file_read", mock_return)
-
-
-@pytest.fixture
-def mock_currency_api(monkeypatch):
-    def mock_return(*args, **kwargs):
-        return TEST_CURRENCY_RATES
-
-    monkeypatch.setattr("src.views.get_currency", mock_return)
-
-
-@pytest.fixture
-def mock_stocks_api(monkeypatch):
-    def mock_return(*args, **kwargs):
-        return TEST_STOCK_PRICES
-
-    monkeypatch.setattr("src.views.get_stocks", mock_return)
-
-
-@pytest.fixture
-def mock_user_settings_file():
-    with patch("builtins.open", mock_open(read_data=json.dumps(TEST_USER_SETTINGS))):
-        yield
 
 
 def test_get_top_transactions():
@@ -178,4 +139,3 @@ def test_main_sheet_structure(mock_xlsx_file_read, mock_currency_api, mock_stock
     # Проверяем, что топ транзакций отсортированы правильно
     amounts = [tx["amount"] for tx in result["top_transactions"]]
     assert amounts == sorted(amounts, reverse=True)
-

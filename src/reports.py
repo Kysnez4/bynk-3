@@ -3,7 +3,6 @@ import os
 from datetime import timedelta
 from functools import wraps
 from typing import Optional
-from src.utils import file_df
 import pandas as pd
 import datetime
 
@@ -17,8 +16,10 @@ file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s: %(me
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
-def report_file_write(filename: str = 'report.txt'):
+
+def report_file_write(filename: str = "report.txt"):
     """Декоратор для сохранения результата функции-отчета в указанный файл."""
+
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
@@ -26,43 +27,48 @@ def report_file_write(filename: str = 'report.txt'):
             base_dir = os.path.dirname(os.path.abspath(__file__))
             report_dir = os.path.join(base_dir, "..", "reports")
             report_file_path = os.path.join(report_dir, filename)
-            logger.info(f"Создаём и открываем файл по пути {report_file_path} и записываем результат функции {func.__name__} = {result}")
+            logger.info(
+                "Создаём и открываем файл по пути %s и записываем результат функции %s = %s",
+                report_file_path, func.__name__, result
+            )
             with open(report_file_path, "w", encoding="utf-8") as file:
                 file.write(str(result))
             return result
+
         return wrapper
+
     return decorator
 
 
-@report_file_write(filename='my_report.txt')
+@report_file_write(filename="my_report.txt")
 def spending_by_category(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> pd.DataFrame:
     """Фильтрует транзакции по категории за последние 3 месяца от указанной даты и вычисляет сумму расходов.
 
-        Args:
-            transactions: DataFrame с транзакциями.
-            category: Название категории для фильтрации.
-            date: Дата в формате 'YYYY-MM-DD' (по умолчанию текущая дата).
+    Args:
+        transactions: DataFrame с транзакциями.
+        category: Название категории для фильтрации.
+        date: Дата в формате 'YYYY-MM-DD' (по умолчанию текущая дата).
 
-        Returns:
-            DataFrame с одной строкой, содержащей сумму расходов по указанной категории.
+    Returns:
+        DataFrame с одной строкой, содержащей сумму расходов по указанной категории.
     """
     logger.info("Проверяем дана ли дата и переводим её в нужный формат")
     if date is None:
         date = datetime.datetime.now()
     else:
-        date = datetime.datetime.strptime(date, '%Y-%m-%d')
+        date = datetime.datetime.strptime(date, "%Y-%m-%d")
 
     date_2 = date - timedelta(days=90)
     logger.info(f"Получаем что дата через 3 месяца от даты {date} равна {date_2}")
-    transactions['Дата платежа'] = pd.to_datetime(transactions['Дата платежа'], format='%d.%m.%Y', dayfirst=True)
+    transactions["Дата платежа"] = pd.to_datetime(transactions["Дата платежа"], format="%d.%m.%Y", dayfirst=True)
     logger.info("Фильтруем список транзакций по дате и категории")
     filter_transactions = transactions[
-        (category == transactions['Категория']) &
-        (transactions['Дата платежа'] >= date_2) &
-        (transactions['Дата платежа'] <= date)
+        (category == transactions["Категория"])
+        & (transactions["Дата платежа"] >= date_2)
+        & (transactions["Дата платежа"] <= date)
     ]
     summ = 0
-    for i in filter_transactions['Сумма операции']:
+    for i in filter_transactions["Сумма операции"]:
         if i < 0:
             summ += i
     logger.info(f"Находим сумму трат за 3 месяца от даты {date} с нужной категорией")

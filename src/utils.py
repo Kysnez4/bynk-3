@@ -14,11 +14,13 @@ file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s: %(me
 file_handler.setFormatter(file_formatter)
 logger.addHandler(file_handler)
 
+
 def XLSX_file_read() -> Union[list[dict[Hashable, Any]], str]:
     """Читает данные из XLSX-файла и преобразует их в список словарей.
 
     Returns:
         Список словарей с данными транзакций или строку с ошибкой, если файл не найден.
+        :return:
     """
     logger.info("Задаём путь до файла")
     base_dir = os.path.dirname(os.path.abspath(__file__))
