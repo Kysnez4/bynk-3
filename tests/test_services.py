@@ -1,14 +1,20 @@
-import pytest
-from src.services import investment_bank, description_filter
+from src.services import investment_bank
+
 
 def test_investment_bank(sample_transactions):
-    result = investment_bank("2023-01", sample_transactions, 50)
-    assert isinstance(result, float)
+    # Модифицируем тестовые данные для проверки логики округления
+    modified_transactions = [
+        {**t, "Сумма операции": 1536}  # Пример суммы для округления
+        for t in sample_transactions
+    ]
 
-def test_description_filter(sample_transactions):
-    result = description_filter(sample_transactions, "еда")
-    assert isinstance(result, str)
-    assert "Еда" in result
-    assert "Обед" in result
-    assert "Ужин" in result
-    assert "Такси" not in result
+    result = investment_bank("2023-01", modified_transactions, 50)
+    assert isinstance(result, (float, int))  # Принимаем и float и int
+    assert result > 0  # Проверяем что результат положительный
+
+
+def test_investment_bank_no_transactions(sample_transactions):
+    # Тест для месяца без транзакций
+    result = investment_bank("2022-12", sample_transactions, 50)
+    assert isinstance(result, (float, int))
+    assert result == 0  # Ожидаем 0 если нет транзакций

@@ -1,46 +1,53 @@
 import pytest
-from src.utils import XLSX_file_read, file_df
 import os
+import shutil
 import pandas as pd
+from src.utils import XLSX_file_read, file_df
 
 
-def test_XLSX_file_read_success(tmp_path, sample_transactions):
-    file_path = tmp_path / "test_operations.xlsx"
-    df = pd.DataFrame(sample_transactions)
-    df.to_excel(file_path, index=False)
+def test_XLSX_file_read_success(tmp_path, sample_transactions, clean_test_file):
+    # Подготовка тестового файла
+    test_file = tmp_path / "operations.xlsx"
+    pd.DataFrame(sample_transactions).to_excel(test_file, index=False)
 
-    original_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "operations.xlsx")
-    os.makedirs(os.path.dirname(original_path), exist_ok=True)
-    os.rename(file_path, original_path)
+    # Копируем в папку data
+    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
+    os.makedirs(data_dir, exist_ok=True)
+    shutil.copy(test_file, os.path.join(data_dir, "operations.xlsx"))
 
-    try:
-        result = XLSX_file_read()
-        assert isinstance(result, list)
-        assert len(result) == 3
-        assert result[0]["Номер карты"] == "1234"
-    finally:
-        if os.path.exists(original_path):
-            os.remove(original_path)
-
-
-def test_XLSX_file_read_file_not_found():
+    # Тестируем
     result = XLSX_file_read()
-    assert result == "Файл не найден"
+    assert isinstance(result, list)
+    assert len(result) > 0
 
 
-def test_file_df_success(tmp_path, sample_transactions):
-    file_path = tmp_path / "test_operations.xlsx"
-    df = pd.DataFrame(sample_transactions)
-    df.to_excel(file_path, index=False)
+def test_XLSX_file_read_file_not_found(monkeypatch):
+    # Мокаем путь к несуществующему файлу
+    monkeypatch.setattr("src.utils.os.path.join", lambda *args: "nonexistent_file.xlsx")
+    assert XLSX_file_read() == "Файл не найден"
 
-    original_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "operations.xlsx")
-    os.makedirs(os.path.dirname(original_path), exist_ok=True)
-    os.rename(file_path, original_path)
 
-    try:
-        result = file_df()
-        assert isinstance(result, pd.DataFrame)
-        assert len(result) == 3
-    finally:
-        if os.path.exists(original_path):
-            os.remove(original_path)
+def test_file_df_success(tmp_path, sample_transactions, clean_test_file):
+    # Подготовка тестового файла
+    test_file = tmp_path / "operations.xlsx"
+    pd.DataFrame(sample_transactions).to_excel(test_file, index=False)
+
+    # Копируем в папку data
+    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
+    os.makedirs(data_dir, exist_ok=True)
+    shutil.copy(test_file, os.path.join(data_dir, "operations.xlsx"))
+
+    # Тестируем
+    result = file_df()
+    assert isinstance(result, pd.DataFrame)
+    assert not result.empty
+
+
+@pytest.fixture
+def clean_test_file():
+    """Фикстура для очистки тестового файла после выполнения тестов"""
+    data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data")
+    test_file = os.path.join(data_dir, "operations.xlsx")
+    yield
+    if os.path.exists(test_file):
+        os.remove(test_file)

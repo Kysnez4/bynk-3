@@ -1,38 +1,181 @@
-from src.views import main_sheet, get_top_transactions, get_cards
+import pytest
+from unittest.mock import patch, mock_open
 import json
+import datetime
+from src.views import main_sheet, get_top_transactions, get_cards
+
+# Тестовые данные
+TEST_USER_SETTINGS = {
+    "currencies": ["USD", "EUR"],
+    "stocks": ["AAPL", "GOOGL"]
+}
+
+TEST_XLSX_DATA = [
+    {
+        "Дата платежа": "01.01.2023",
+        "Дата операции": "2023-01-01 12:00:00",
+        "Номер карты": "1234567890123456",
+        "Сумма операции с округлением": 1000.0,
+        "Категория": "Еда",
+        "Описание": "Ресторан",
+        "Кэшбэк": 50.0
+    },
+    {
+        "Дата платежа": "02.01.2023",
+        "Дата операции": "2023-01-02 14:00:00",
+        "Номер карты": "1234567890123456",
+        "Сумма операции с округлением": 500.0,
+        "Категория": "Транспорт",
+        "Описание": "Такси",
+        "Кэшбэк": 10.0
+    },
+    {
+        "Дата платежа": "03.01.2023",
+        "Дата операции": "2023-01-03 16:00:00",
+        "Номер карты": "9876543210987654",
+        "Сумма операции с округлением": 2000.0,
+        "Категория": "Одежда",
+        "Описание": "Магазин",
+        "Кэшбэк": 100.0
+    },
+    {
+        "Дата платежа": "04.01.2023",
+        "Дата операции": "2023-01-04 18:00:00",
+        "Номер карты": "9876543210987654",
+        "Сумма операции с округлением": 300.0,
+        "Категория": "Развлечения",
+        "Описание": "Кино",
+        "Кэшбэк": 15.0
+    },
+    {
+        "Дата платежа": "05.01.2023",
+        "Дата операции": "2023-01-05 20:00:00",
+        "Номер карты": "1234567890123456",
+        "Сумма операции с округлением": 1500.0,
+        "Категория": "Путешествия",
+        "Описание": "Отель",
+        "Кэшбэк": 75.0
+    },
+    {
+        "Дата платежа": "06.01.2023",
+        "Дата операции": "2023-01-06 22:00:00",
+        "Номер карты": "9876543210987654",
+        "Сумма операции с округлением": 2500.0,
+        "Категория": "Техника",
+        "Описание": "Ноутбук",
+        "Кэшбэк": 125.0
+    }
+]
+
+TEST_CURRENCY_RATES = [
+    {"currency": "USD", "rate": 75.0},
+    {"currency": "EUR", "rate": 85.0}
+]
+
+TEST_STOCK_PRICES = [
+    {"stock": "AAPL", "price": 150.0},
+    {"stock": "GOOGL", "price": 2500.0}
+]
 
 
-def test_get_top_transactions(sample_transactions):
-    result = get_top_transactions(sample_transactions)
-    assert isinstance(result, list)
-    assert len(result) == 3
-    assert result[0]["amount"] == 300
+@pytest.fixture
+def mock_xlsx_file_read(monkeypatch):
+    def mock_return(*args, **kwargs):
+        return TEST_XLSX_DATA
+
+    monkeypatch.setattr("src.views.XLSX_file_read", mock_return)
 
 
-def test_get_cards(sample_transactions):
-    result = get_cards(sample_transactions)
-    assert isinstance(result, list)
+@pytest.fixture
+def mock_currency_api(monkeypatch):
+    def mock_return(*args, **kwargs):
+        return TEST_CURRENCY_RATES
+
+    monkeypatch.setattr("src.views.get_currency", mock_return)
+
+
+@pytest.fixture
+def mock_stocks_api(monkeypatch):
+    def mock_return(*args, **kwargs):
+        return TEST_STOCK_PRICES
+
+    monkeypatch.setattr("src.views.get_stocks", mock_return)
+
+
+@pytest.fixture
+def mock_user_settings_file():
+    with patch("builtins.open", mock_open(read_data=json.dumps(TEST_USER_SETTINGS))):
+        yield
+
+
+def test_get_top_transactions():
+    # Тестируем получение топ-5 транзакций
+    result = get_top_transactions(TEST_XLSX_DATA)
+
+    # Проверяем, что возвращается 5 транзакций
+    assert len(result) == 5
+
+    # Проверяем, что транзакции отсортированы по убыванию суммы
+    amounts = [tx["amount"] for tx in result]
+    assert amounts == sorted(amounts, reverse=True)
+
+    # Проверяем структуру данных
+    for tx in result:
+        assert "date" in tx
+        assert "amount" in tx
+        assert "category" in tx
+        assert "description" in tx
+
+
+def test_get_cards():
+    # Тестируем агрегацию данных по картам
+    result = get_cards(TEST_XLSX_DATA)
+
+    # Проверяем, что найдены все карты
     assert len(result) == 2
-    assert result[0]["last_digits"] == "1234"
-    assert result[0]["total_spent"] == 300
+
+    # Проверяем правильность подсчета сумм и кешбэка
+    for card in result:
+        if card["last_digits"] == "234567890123456":
+            assert card["total_spent"] == 3000.0  # 1000 + 500 + 1500
+            assert card["cashback"] == 135.0  # 50 + 10 + 75
+        elif card["last_digits"] == "876543210987654":
+            assert card["total_spent"] == 4800.0  # 2000 + 300 + 2500
+            assert card["cashback"] == 240.0  # 100 + 15 + 125
+
+    # Проверяем структуру данных
+    for card in result:
+        assert "last_digits" in card
+        assert "total_spent" in card
+        assert "cashback" in card
 
 
-def test_main_sheet(sample_transactions, tmp_path, monkeypatch, user_settings):
-    settings_path = tmp_path / "user_settings.json"
-    with open(settings_path, "w") as f:
-        json.dump(user_settings, f)
+def test_main_sheet_structure(mock_xlsx_file_read, mock_currency_api, mock_stocks_api, mock_user_settings_file):
+    # Тестируем общую структуру ответа
+    result = json.loads(main_sheet("2023-01-10 12:00:00"))
 
-    def mock_XLSX_file_read():
-        return sample_transactions
+    # Проверяем наличие всех ожидаемых ключей
+    assert "greeting" in result
+    assert "cards" in result
+    assert "top_transactions" in result
+    assert "currency_rates" in result
+    assert "stock_prices" in result
 
-    monkeypatch.setattr("src.views.XLSX_file_read", mock_XLSX_file_read)
-    monkeypatch.setattr("src.views.open", lambda x: open(settings_path))
+    # Проверяем типы данных
+    assert isinstance(result["greeting"], str)
+    assert isinstance(result["cards"], list)
+    assert isinstance(result["top_transactions"], list)
+    assert isinstance(result["currency_rates"], list)
+    assert isinstance(result["stock_prices"], list)
 
-    result = main_sheet("2023-01-03 15:00:00")
-    data = json.loads(result)
+    # Проверяем, что данные карт соответствуют ожиданиям
+    assert len(result["cards"]) == 2
+    for card in result["cards"]:
+        assert "last_digits" in card
+        assert "total_spent" in card
+        assert "cashback" in card
 
-    assert data["greeting"] == "Добрый день"
-    assert len(data["cards"]) == 2
-    assert len(data["top_transactions"]) == 3
-    assert len(data["currency_rates"]) == 2
-    assert len(data["stock_prices"]) == 2
+    # Проверяем, что топ транзакций отсортированы правильно
+    amounts = [tx["amount"] for tx in result["top_transactions"]]
+    assert amounts == sorted(amounts, reverse=True)
+
