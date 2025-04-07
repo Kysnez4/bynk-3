@@ -16,7 +16,7 @@ Banky — это консольное приложение для анализа
 
 1. **Клонируйте репозиторий:**
    ```bash
-   git clone https://github.com/ваш-username/banky.git
+   git clone https://github.com/Kysnez4/bynk-3.git
    cd banky
    ```
 2. **Установите зависимости:**
